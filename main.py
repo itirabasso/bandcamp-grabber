@@ -11,6 +11,7 @@ import redis
 from termcolor import colored
 import urlparse
 import wget
+import time
 
 import sys    # sys.setdefaultencoding is cancelled by site.py
 reload(sys)    # to re-enable sys.setdefaultencoding()
@@ -326,19 +327,32 @@ def download_album(url):
         '.vrs':1
     }
 
+
     url = transform_download_url(url)
-    response = requests.get(
-        "https://popplers5.bandcamp.com/statdownload/album?",
-        data=payload,
-        headers=headers,
-        cookies=cookies
-    )
-    if response.status_code != 200:
-        print_error("an error has occurred trying to get the file download url.")
+    attempt = 0
+    while(attempts < 5)
+        response = requests.get(
+            "https://popplers5.bandcamp.com/statdownload/album?",
+            data=payload,
+            headers=headers,
+            cookies=cookies
+        )
+        if response.status_code != 200:
+            print_error("an error has occurred trying to get the file download url.")
+            return False
+        else:
+            response = json.loads(response.text)
+            try:
+                file_download_url = response['download_url']
+                break
+            except
+                print_warning("Download url isn't ready yet, sleeping 2 secs...")
+                time.sleep(2)
+                attempts+=1
+
+    if attempts >= 5:
+        print_error("No se pudo descargar el album {0}".format(album_id))
         return False
-    else:
-        response = json.loads(response.text)
-        file_download_url = response['download_url']
 
     # download = urllib.URLopener()
     # download.retrieve(file_download_url,  str(album_id) + ".zip")
