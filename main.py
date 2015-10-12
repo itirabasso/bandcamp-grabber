@@ -146,7 +146,7 @@ def request_album(doc, address=None):
         BACKENDID='bender04-5',
     )
 
-    # print(payload)
+    print(payload)
     print_debug("Requesting album {0}".format(album_id))
     if debug:
         return False
@@ -353,7 +353,6 @@ def work(tag=None):
         requested = request_album(album_url)
         if requested:
             set_as_requested(album_id)
-        if requested:
             print_success("Album {0} was requested!".format(get_album_name_from_url(album_url)))
         else:
             print_error("Album {0} was NOT requested!".format(get_album_name_from_url(album_url)))
@@ -368,7 +367,8 @@ def work(tag=None):
             break
         set_download_url(process_email(m))
 
-    db.set('last_email', mails[0])
+    if len(mails > 0):
+        db.set('last_email', mails[0])
 
     for elem in db.sdiff('albums', 'downloaded'):
         album = db.hgetall('album:' + str(elem))
