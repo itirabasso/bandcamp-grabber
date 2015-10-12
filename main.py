@@ -216,7 +216,7 @@ def get_inbox(login='grabberyyz', max_pages=100):
     run = True
     while(page <= max_pages and run):
         print_debug("page: " + str(page))
-        url = 'http://www.yopmail.com/en/inbox.php?login={0}&p={1}&v=2.6'.format("asd", page)
+        url = 'http://www.yopmail.com/en/inbox.php?login={0}&p={1}&v=2.6'.format(login, page)
         d = pq(url=url)
         emails = d.find('a.lm')
 
