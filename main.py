@@ -367,7 +367,7 @@ def work(tag=None):
             break
         set_download_url(process_email(m))
 
-    if len(mails > 0):
+    if len(mails) > 0:
         db.set('last_email', mails[0])
 
     for elem in db.sdiff('albums', 'downloaded'):
