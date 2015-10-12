@@ -16,6 +16,8 @@ import sys    # sys.setdefaultencoding is cancelled by site.py
 reload(sys)    # to re-enable sys.setdefaultencoding()
 sys.setdefaultencoding('utf-8')
 
+debug=True
+
 db = redis.StrictRedis(host='localhost', port=6379, db=0)
 
 def print_success(msg):
@@ -91,8 +93,6 @@ def get_albums(tag=None):
     i = 0
     for album in results.items('a'):
         ret[album.attr['title']] = album.attr['href']
-        i+=1
-        if i >= 3: break
         # print(album.attr['title'] + " => " + album.attr['href'])
 
     print "Found {0} albums".format(len(ret))
@@ -148,15 +148,17 @@ def request_album(doc, address=None):
 
     # print(payload)
     print_debug("Requesting album {0}".format(album_id))
-    # response = requests.post(
-    #     "http://fertildiscos.bandcamp.com/email_download",
-    #     data=payload,
-    #     headers=headers,
-    #     cookies=cookies
-    # )
-    return False
+    if debug:
+        return False
+    else:
+        response = requests.post(
+            "http://fertildiscos.bandcamp.com/email_download",
+            data=payload,
+            headers=headers,
+            cookies=cookies
+        )
+
     if response.status_code != 200: print "ERROR"
-    # return response
     return response.status_code == 200
 
 def filter_free_albums(albums=None):
@@ -205,16 +207,40 @@ def process_email(uri):
     link = d.find('#mailmillieu a').attr('href')
     return link
 
-def get_inbox(login=None):
+def get_inbox(login='grabberyyz', max_pages=100):
     print "Getting inbox..."
-    url = 'http://www.yopmail.com/en/inbox.php?login={0}&v=2.6'.format(login if login else 'grabberyyz')
-    d = pq(url=url)
-    emails = d.find('a.lm')
-    # print(emails)
-    ret = []
-    for e in emails.items():
-        ret.append(e.attr('href'))
+    last_email = db.get('last_email')
 
+    ret = []
+    page = 1
+    run = True
+    while(page <= max_pages and run):
+        print_debug("page: " + str(page))
+        url = 'http://www.yopmail.com/en/inbox.php?login={0}&p={1}&v=2.6'.format("asd", page)
+        d = pq(url=url)
+        emails = d.find('a.lm')
+
+        if page == 1:
+            td = d.find('td.alm')
+            if not td:
+                # no more than 1 page
+                max_pages = 1
+            else:
+                title = td.find('a.igif.next').attr('title')
+                max_pages = int(title.split('/')[1])
+                print_debug("New max_pages=" + str(max_pages))
+
+        for e in emails.items():
+            href = e.attr('href')
+            if href == last_email:
+                run=False
+                break
+            ret.append(href)
+            print_debug(href)
+
+        page+=1
+
+    # print(emails)
     print "Found {0} new emails".format(len(ret))
     return ret
 
@@ -317,7 +343,7 @@ def download_album(url):
     # download = urllib.URLopener()
     # download.retrieve(file_download_url,  str(album_id) + ".zip")
     wget.download(file_download_url)
-    # db.sadd("downloaded", str(album_id))
+    db.sadd("downloaded", str(album_id))
 
 def work(tag=None):
     albums = get_free_albums(tag)
@@ -354,4 +380,5 @@ def work(tag=None):
             print_success('Download complete!')
 
 
+# get_inbox()
 work()
