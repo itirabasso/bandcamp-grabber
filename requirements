@@ -1,9 +1,5 @@
 pyquery
-urllib
-urllib2
 requests
-json
 redis
 termcolor
-urlparse
 wget
